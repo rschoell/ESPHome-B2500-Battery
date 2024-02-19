@@ -21,9 +21,20 @@ esp32:
     version: recommended
 #    type: arduino
 
-#ota:                                     #remove '#' to use ota
+# Enable logging
+logger:
+  level: INFO
+#  level: DEBUG
+#  baud_rate: 0
 
-# Enable wifi
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "nZnNzvZXYurNIShgY/GSIgZQsnGEeZqSTcOpjowA0TM="
+
+ota:
+  password: "5de5c53a13568a65c99c37cd946dcef8"
+
 wifi:
   id: npw2500_wifi
   ssid: !secret wifi_ssid
@@ -31,12 +42,13 @@ wifi:
   reboot_timeout: 0s
   fast_connect: True
 
-# Enable Home Assistant API
-api:       
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+#  ap:
+#    ssid: "B2500 Fallback Hotspot"
+#    password: "pNLbPnPs0ldL"
 
-# Enable logging
-logger:
-
+#captive_portal:
+    
 esp32_ble_tracker:
 
 #web_server:                                      #remove '#' to use web_server
