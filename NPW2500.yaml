@@ -69,7 +69,7 @@ esp32_ble_tracker:
  # log_topic: npw2500/debug
 
 ble_client:
-  - mac_address: e8:8d:a6:56:00:00              # mac address of the batterie, you find it in in the App
+  - mac_address: !secret hm2500_1_mac             # mac address of the batterie, you find it in in the App
     id: npw2500_ble
 
                       
