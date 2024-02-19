@@ -15,9 +15,11 @@ esphome:
   friendly_name: No Power Wasted 2500
 
 esp32:
-  board: esp32dev
+  board: wemos_d1_mini32   #esp32dev
   framework:
     type: esp-idf
+    version: recommended
+#    type: arduino
 
 #ota:                                     #remove '#' to use ota
 
