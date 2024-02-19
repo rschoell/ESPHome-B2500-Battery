@@ -1,0 +1,801 @@
+# No Power Wasted 2500 
+# ESPHome Software für alle gängigen Versionen des Balkonspeichers xy2500.
+# Diese Version ist speziell für Verwendung mit dem Home Assistant ausgelegt und 
+# inkludiert die Kommunikation mit diesem, Regelung für Nulleinspeisung (funktioniert auch ohne Akku)
+# und in Zukunft einiges mehr.
+# Die Kommunikation mit dem Balkonspeichers xy2500 basiert auf der Arbeit von noone2K.
+# Die Hauptseite für neue Entwicklungen, Integration MQTT, openhab usw. findet ihr unter:
+# https://gist.github.com/noone2k/2ddea4c9bf116aaaefb8626b064d9a41
+#
+#   Mögen euch die Bits gnädig sein, 
+#   neromatrix
+
+esphome:
+  name: npw2500
+  friendly_name: No Power Wasted 2500
+
+esp32:
+  board: esp32dev
+  framework:
+    type: esp-idf
+
+#ota:                                     #remove '#' to use ota
+
+# Enable wifi
+wifi:
+  id: npw2500_wifi
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+  fast_connect: True
+
+# Enable Home Assistant API
+api:       
+
+# Enable logging
+logger:
+
+esp32_ble_tracker:
+
+#web_server:                                      #remove '#' to use web_server
+#  port: 80
+#  local: true
+#  js_include: "./v2/www.js"
+#  js_url: "/0.js"
+#  version: 2
+
+#mqtt:                                            #remove '#' to use mqtt
+#  id: npw2500_mqtt_client
+#  broker: 192.168.178.45                         # IP of HA broker
+#  username: username                             # username of HA mqtt username
+#  password: xyz                                  # password of HA mqtt password 
+#  discovery: False
+#  reboot_timeout: 0s
+#  topic_prefix: npw2500
+ # log_topic: npw2500/debug
+
+ble_client:
+  - mac_address: e8:8d:a6:56:00:00              # mac address of the batterie, you find it in in the App
+    id: npw2500_ble
+
+                      
+globals:
+
+  - id: npw2500_boot_state
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+
+  - id: npw2500_grid_old_value
+    type: int
+    restore_value: no
+    initial_value: '0'
+
+text_sensor:
+  - platform: version
+    id: npw2500_version
+    name: "No Power Wasted 2500"
+    hide_timestamp: true
+
+binary_sensor:
+  - platform:     template
+    name:         ESP Ble connected
+    id:           npw2500_ble_connected
+#    state_topic:  npw2500/service/ble_connected
+
+  - platform:     template
+    name:         ESP Wifi connected
+    id:           npw2500_wifi_connected
+#    state_topic:  npw2500/service/wifi_connected
+
+  - platform:     template
+    name:         ESP HA connected
+    id:           npw2500_api_connected
+#    state_topic:  npw2500/service/ha_connected
+
+#  - platform:     template
+#    name:         ESP MQTT connected
+#    id:           npw2500_mqtt_connected
+#    state_topic:  npw2500/service/mqtt_connected
+
+  - platform:     template
+    name:         Input Ch1 active
+    id:           npw2500_input_ch1_active
+#    state_topic:  npw2500/inputs/ch1_active
+
+  - platform:     template
+    name:         Input Ch2 active
+    id:           npw2500_input_ch2_active
+#    state_topic:  npw2500/inputs/ch2_active
+
+  - platform:     template
+    name:         Input Ch1 transparent
+    id:           npw2500_input_ch1_transparent
+#    state_topic:  npw2500/inputs/ch1_transparent
+ 
+  - platform:     template
+    name:         Input Ch2 transparent
+    id:           npw2500_input_ch2_transparent
+#    state_topic:  npw2500/inputs/ch2_transparent
+
+  - platform:     template
+    name:         Battery WiFi connected
+    id:           npw2500_battery_wifi
+#    state_topic:  npw2500/status/battery_wifi
+
+  - platform:     template
+    name:         Battery MQTT connected
+    id:           npw2500_battery_mqtt
+#    state_topic:  npw2500/status/battery_mqtt
+
+  - platform:     template
+    name:         Ouput Ch1 active
+    id:           npw2500_power_ch1_active
+#    state_topic:  npw2500/outputs/ch1_active
+
+  - platform:     template
+    name:         Ouput Ch2 active
+    id:           npw2500_power_ch2_active
+#    state_topic:  npw2500/outputs/ch2_active
+
+  - platform:     template
+    name:         PassThrough active
+    id:           npw2500_passthrough_active
+#    state_topic:  npw2500/outputs/passthrough_active
+ 
+sensor:
+    #### Input Power
+  - platform: template
+    name:     Input Power
+    id:       npw2500_input_power
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/inputs/input_power
+
+    ### NPW2500 Input Ch1 
+  - platform: template
+    name:     Input Ch1 Power
+    id:       npw2500_input_power_ch1
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/inputs/input_power_ch1
+
+    ### NPW2500 Input Ch2 
+  - platform: template
+    name:     Input Ch2 Power 
+    id:       npw2500_input_power_ch2
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/inputs/input_power_ch2
+
+    #### Ouput Power 
+  - platform: template
+    name:     Output Power
+    id:       npw2500_output_power
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/outputs/output_power
+
+    #### InOutput Power 
+  - platform: template
+    name:     Battery Power InOut
+    id:       npw2500_inout_power
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+    update_interval: 10s
+    lambda: |-
+      return (id(npw2500_input_power).state - id(npw2500_output_power).state);
+#    state_topic:  npw2500/battery/inoutput_power
+
+    #### Ouput Power Ch1 
+  - platform: template
+    name:     Output Power Ch1
+    id:       npw2500_output_power_ch1
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/outputs/output_power_ch1
+
+    #### Ouput Power Ch2 
+  - platform: template
+    name:     Output Power Ch2
+    id:       npw2500_output_power_ch2
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/outputs/output_power_ch2
+
+  - platform: template
+    name: "Battery SOC"
+    id: npw2500_soc
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/battery/soc
+
+  - platform: template
+    name:     Battery SOC calc.
+    id:       npw2500_soc_calc
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/battery/soc_calc
+
+  - platform: template
+    name: Battery remaining capacity
+    id: npw2500_brc
+    unit_of_measurement: 'Wh'
+    device_class: 'battery'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/battery/brc
+
+
+    ### Ha Integration
+  - platform:   homeassistant
+    name:       Grid Power 
+    id:         npw2500_grid_power
+    entity_id:  sensor.grid_power
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+    internal: false   
+
+    ### Ha Integration
+  - platform:   homeassistant
+    name:       openDTU Power limit relative
+    id:         npw2500_limit_nonpersistent_relative
+    entity_id:  number.hm_800_limit_nonpersistent_relative
+    unit_of_measurement: '%'
+    device_class: 'power'
+    accuracy_decimals: 0
+    internal: false   
+
+    ### Ha Integration
+  - platform:   template
+    name:       openDTU Value
+    id:         opendtu_limit_nonpersistent_relative
+    unit_of_measurement: '%'
+    device_class: 'power'
+    accuracy_decimals: 0
+    internal: true   
+
+  - platform:     template
+    name:         Temperature Sensor 1   
+    id:           npw2500_temperature_1 
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/cells/temperature1
+
+  - platform: template
+    name:         Temperature Sensor 2
+    id:           npw2500_temperature_2
+    unit_of_measurement: '°C'
+    device_class: 'temperature'
+    accuracy_decimals: 0
+#    state_topic:  npw2500/cells/temperature2
+
+  - platform: template
+    name: "Cell Voltage sum"
+    id: npw2500_cell_vsum
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    accuracy_decimals: 3
+#    state_topic: npw2500/cells/cell_vsum
+
+  - platform: template
+    name: "Cell Voltage max"
+    id: npw2500_cell_vmax
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    accuracy_decimals: 3
+#    state_topic: npw2500/cells/cell_vmax
+   
+  - platform: template
+    name: "Cell Voltage min"
+    id: npw2500_cell_vmin
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    accuracy_decimals: 3
+#    state_topic: npw2500/cells/cell_vmin
+   
+  - platform: template
+    name: "Cell Voltage avg"
+    id: npw2500_cell_vavg
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    accuracy_decimals: 3
+#    state_topic: npw2500/cells/cell_vavg
+   
+  - platform: template
+    name: "Cell Voltage diff"
+    id: npw2500_cell_vdiff
+    unit_of_measurement: 'V'
+    device_class: 'voltage'
+    accuracy_decimals: 3
+#    state_topic: npw2500/cells/cell_vdiff
+  
+  - platform: template
+    name: Discharge threshold
+    id:   npw2500_discharge_treshold_value
+    unit_of_measurement: '%'
+    device_class: 'power'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: Solar Charge threshold
+    id:   npw2500_solar_charge_treshold_value
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+
+  - platform: template
+    name: "Battery Version" 
+    id: npw2500_device_version
+    accuracy_decimals: 3
+#    state_topic: npw2500/device_version
+
+  - platform: ble_client
+    ble_client_id: npw2500_ble
+    type: characteristic
+    name: "npw2500Info"
+    id: npw2500_Info
+    service_uuid: 'ff00'
+    characteristic_uuid: 'ff02'
+    update_interval: never
+    internal: True
+    notify: True 
+    lambda: |-
+          std::vector<char> xdata;
+          for (auto b : x) { xdata.push_back(b); }
+          id(ble_parse_response).execute(xdata);
+          return (float)x[0];
+
+    #### Battery Charge
+  - platform: template
+    name:     Battery Charge
+    id:       npw2500_battery_charge
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+    update_interval: 10s
+    lambda: |-
+      if( id(npw2500_input_power).state > id(npw2500_output_power).state ) {
+        return ( id(npw2500_input_power).state - id(npw2500_output_power).state );
+      } else {
+        return (0);
+      }
+#    state_topic:  npw2500/battery/charge
+
+    #### Battery Discharge
+  - platform: template
+    name:     Battery Discharge
+    id:       npw2500_battery_Discharge
+    unit_of_measurement: 'W'
+    device_class: 'power'
+    accuracy_decimals: 0
+    update_interval: 10s
+    lambda: |-
+      if( id(npw2500_output_power).state > id(npw2500_input_power).state ) {
+        return ( id(npw2500_output_power).state - id(npw2500_input_power).state );
+      } else {
+        return (0);
+      }
+#    state_topic:  npw2500/battery/discharge
+
+     
+switch:
+  - platform:     template
+    name:         Power Out Switch Ch1 
+    id:           npw2500_powerout_switch_ch1
+    icon: mdi:toggle-switch
+#    state_topic:  npw2500/switch/powerout_ch1_switch
+    optimistic:   True
+    assumed_state: False
+    on_turn_on:
+      then:
+        - script.execute: 
+            id: ble_switch_powerout
+    on_turn_off:
+      then:
+        - script.execute: 
+            id: ble_switch_powerout
+   
+  - platform:     template
+    name:         Power Out Switch Ch2
+    id:           npw2500_powerout_switch_ch2
+    icon: mdi:toggle-switch
+#    state_topic:  npw2500/switch/powerout_ch2_switch
+    optimistic:   True
+    assumed_state: False
+    on_turn_on:
+      then:
+        - script.execute: 
+            id: ble_switch_powerout
+    on_turn_off:
+      then:
+        - script.execute: 
+            id: ble_switch_powerout
+
+  - platform:     template
+    name:         PV2 Passtrough Switch
+    id:           npw2500_powerout_pv2_switch
+    icon: mdi:toggle-switch
+    #state_topic:  npw2500/switch/powerout_pv2_switch
+    optimistic:   True
+    #assumed_state: False
+    on_turn_on:
+      then:
+        - script.execute: 
+            id: ble_command
+            ble_cmd: 0x0D
+            ble_cmd_parm: 0x00
+        - script.wait: ble_command 
+    on_turn_off:
+      then:
+        - script.execute: 
+            id: ble_command
+            ble_cmd: 0x0D
+            ble_cmd_parm: 0x01
+        - script.wait: ble_command 
+
+  - platform:     template
+    name:         ZeroPower enabled
+    id:           npw2500_zeropower_enabled
+    optimistic:   True
+    restore_mode: RESTORE_DEFAULT_OFF 
+    
+
+number:
+  - platform:     template
+    name:         Discharge threshold
+    id:           npw2500_discharge_treshold
+#   state_topic:  npw2500/treshold/discharge_treshold
+    min_value: 10
+    max_value: 90
+    step: 1
+    optimistic: true
+    initial_value : 90
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    icon: 'mdi:speedometer'
+    on_value:
+      then:
+        - script.execute: 
+            id: ble_command
+            ble_cmd: 0x0B
+            ble_cmd_parm: !lambda 'return x;'
+        - script.wait: ble_command    
+                          
+  - platform:     template
+    name:         Solar Charge threshold
+    id:           npw2500_solar_charge_threshold
+#   state_topic:  npw2500/treshold/solar_power_threshold
+    min_value: 0
+    max_value: 500
+    step: 10
+    initial_value : 500
+    optimistic: true
+    unit_of_measurement: 'W'
+    device_class: 'battery'    
+    icon: 'mdi:speedometer'
+    on_value:
+      then:
+        - script.execute: 
+            id: ble_command
+            ble_cmd: 0x0C
+            ble_cmd_parm: !lambda 'return int(x);' 
+        - script.wait: ble_command  
+
+  ############## HA Integration ##############################
+  - platform:     template
+    name:         npw2500 openDTU limit relative
+    id:           npw2500_hm_800_limit_nonpersistent_relative
+    min_value: 0
+    max_value: 100
+    step: 1
+    optimistic: true
+    internal: True
+    #restore_value: true
+    unit_of_measurement: '%'
+    device_class: 'battery'
+    icon: 'mdi:speedometer'
+    on_value: 
+        - logger.log: "----------------------------"
+        - homeassistant.service: 
+            service: number.set_value
+            data_template:
+              entity_id: number.hm_800_limit_nonpersistent_relative
+              value: !lambda |-
+                    ESP_LOGD("limit","limit = %d" , int(x));
+                    return int(x);
+  - platform:     template
+    name:         Set max. Power Limit rel.
+    id:           npw2500_zeropower_max_powerlimit_rel
+    #state_topic:  npw2500/treshold/solar_power_threshold
+    min_value: 10
+    max_value: 100
+    step: 1
+    optimistic: true
+    restore_value: true
+    unit_of_measurement: '%'
+    device_class: 'battery'  
+    icon: 'mdi:speedometer'
+ ############## HA Integration ##############################
+
+time:
+  - platform: homeassistant
+    id: homeassistant_time
+    on_time_sync:
+      then:
+        - logger.log: "Synchronized system clock"
+
+interval:
+  - interval: 5 sec
+    then:
+      - logger.log: "Auf gehts..."
+      - lambda: |- 
+          ESP_LOGD("npw2500","service  HA api: %d   wifi: %d   ble: %d",
+                    global_api_server->is_connected(), 
+                    id(npw2500_wifi).is_connected(),
+                    id(npw2500_ble).connected());
+                    //id(npw2500_mqtt_client).is_connected());
+          
+          id(npw2500_wifi_connected).publish_state(id(npw2500_wifi).is_connected());
+          id(npw2500_ble_connected).publish_state(id(npw2500_ble).connected());
+          id(npw2500_api_connected).publish_state(global_api_server->is_connected());
+          //id(npw2500_mqtt_connected).publish_state(id(npw2500_mqtt_client).is_connected());
+          
+      - if:
+          condition:
+              lambda: 'return id(npw2500_wifi).is_connected() && global_api_server->is_connected();'
+          then:
+                - script.execute: 
+                    id: power_zero
+                - logger.log: "power_zero called"
+                - delay: 1 sec
+                - if:
+                    condition:
+                      lambda: 'return id(npw2500_ble).connected();'       
+                    then:
+                        - script.execute: 
+                              id: ble_command
+                              ble_cmd: 0x03
+                              ble_cmd_parm: 0x01
+                        - logger.log: "Request command 0x03 sent"
+                        - delay: 1 sec
+                        - script.execute: 
+                              id: ble_command
+                              ble_cmd: 0x0f
+                              ble_cmd_parm: 0x01
+                        - logger.log: "Request command 0x0f sent"
+                        - delay: 1 sec
+
+script:
+  - id: ble_parse_response  
+    parameters:
+      x: char[]
+    then:                       
+      lambda: |- 
+        //ESP_LOG_BUFFER_HEXDUMP("npw2500", &x[0], x.size(), ESP_LOG_ERROR);
+        //###   Cell parser by neromatrix  ###
+        //###   Ver. 0.3                   ###
+        if ((std::count (x.begin(), x.end(), '_') == 16) || (std::count (x.begin(), x.begin() + 10, '_') == 3)) 
+        { 
+          int pos = 0;
+          int soc = 0;
+          int t1 = 0;
+          int t2 = 0;
+          float cv = 0.0; 
+          float cmin = std::numeric_limits<float>::max();
+          float cmax = std::numeric_limits<float>::min();
+          float ct = 0.0;
+          int found = -1;
+          char delimiter = '_';
+          std::string xstr; 
+          ESP_LOGD("npw2500","Parsing cell information, response of request command 0xf"); 
+          xstr.assign(x.begin(), x.end());                                // copy values from vector into string xstr, deep copy
+          xstr = xstr + delimiter;                                        // append delimiter to xstr 
+          found = xstr.find(delimiter);                                   // search for position of the first delimiter
+          while (found != -1)                                             // loop until no more delimiter found
+          { 
+            if(pos == 0) soc = atoi( xstr.substr(0, found).c_str());      // pos 0 get int value of device SOC                                                                   // pos 0 don't care
+            if(pos == 1) t1 = atoi( xstr.substr(0, found).c_str());       // pos 1 get int value of temperature sensor 1
+            if(pos == 2) t2 = atoi( xstr.substr(0, found).c_str());       // pos 2 get int value of temperature sensor 2
+            if((pos >= 3) && (pos <= 16))                                 // pos 3-16 parse pos for the 14 cell voltages
+            {                                                             
+              ct = atof( xstr.substr(0, found).c_str());                  // get float value of pos x
+              cv += ct;                                                   // add actual value to var cv
+              if(ct > cmax) cmax = ct;                                    // check for higher value as stored in cmax
+              if(ct < cmin) cmin = ct;                                    // check for lower value as stored in cmin
+            }
+            xstr.erase(xstr.begin(), xstr.begin() + found + 1);           // remove parsed string part
+            found = xstr.find(delimiter);                                 // find next delimiter
+            pos++;                                                        // increment pos
+          }
+          /* calculate SoC from cell voltages
+              cell empty = lowlimit  =  0% SoC                 
+              cell full  = highlimit  = 100% SoC               
+          */
+          float lowlimit  = 3.0;                                            // low voltage limit
+          float highlimit = 3.64;                                           // high voltage limit
+                                                                      
+          float soccalc =  100*((cv/14000) 
+                            - highlimit)/(highlimit - lowlimit) + 100;      // equation of line with two points (0,lowlimit) (100,highlimit)
+          id(npw2500_soc_calc).publish_state(soccalc);                      // SOC calculated from cell voltages (%)
+          id(npw2500_temperature_1).publish_state(t1);                      // Temperature 1 (°C)
+          id(npw2500_temperature_2).publish_state(t2);                      // Temperature 2 (°C)
+          id(npw2500_cell_vsum).publish_state(cv/1000);                     // sum of cellvoltages = battery Voltage(V)
+          id(npw2500_cell_vmin).publish_state(cmin/1000);                   // lowest cellvoltage (V)
+          id(npw2500_cell_vmax).publish_state(cmax/1000);                   // highest cellvoltage (V)
+          id(npw2500_cell_vdiff).publish_state((cmax-cmin)/1000);           // difference high-low (V)
+          id(npw2500_cell_vavg).publish_state(cv/14000);                    // avarage cellvoltage (V)
+        }  
+        //else if((x[3] == 3) && (x.size() == 31))
+        else if(x[3] == 3 )
+        {
+          ESP_LOGD("npw2500","Parsing response of request command 0x3");
+          
+          // Input power ch1
+          int inputpower1 = x[6] | x[7] << 8;
+          id(npw2500_input_power_ch1).publish_state(inputpower1);
+    
+          // Input power ch2
+          int inputpower2 = x[8] | x[9] << 8;
+          id(npw2500_input_power_ch2).publish_state(inputpower2);
+
+          // Input power ch1 + ch2
+          id(npw2500_input_power).publish_state(inputpower1 + inputpower2);
+      
+          // Output power Ch1
+          int outputpower1 = x[24] | x[25] << 8;
+          id(npw2500_output_power_ch1).publish_state(outputpower1);
+    
+          // Output power Ch2
+          int outputpower2 = x[26] | x[27] << 8;
+          id(npw2500_output_power_ch2).publish_state(outputpower2);
+          
+          // Output power Ch1 + Ch2
+          id(npw2500_output_power).publish_state(outputpower1 + outputpower2);
+          
+          // Input-Output power
+          //id(ipoi).publish_state(inputpower1 + inputpower2 - outputpower1 - outputpower2);
+        
+          //int dod_level = x[18];
+          id(npw2500_discharge_treshold_value).publish_state(x[18]);
+          if(id(npw2500_boot_state) == 0) id(npw2500_discharge_treshold).publish_state(x[18]);
+
+          //Solar Treshold
+          id(npw2500_solar_charge_treshold_value).publish_state(x[19] | x[20] << 8);
+          if(id(npw2500_boot_state) == 0) id(npw2500_solar_charge_threshold).publish_state(x[19] | x[20] << 8);
+
+
+          // Battery state of charge %
+          id(npw2500_soc).publish_state((x[10] | x[11] << 8 ) / 10);
+          
+          // Battery remaining capacity
+          id(npw2500_brc).publish_state(x[22] | x[23] << 8);       
+
+          // update active and transparent state of input channels
+          if( x[4] == 0x00 ) { id(npw2500_input_ch1_active).publish_state(false); id(npw2500_input_ch1_transparent).publish_state(false); }
+          if( x[4] == 0x01 ) { id(npw2500_input_ch1_active).publish_state(true);  id(npw2500_input_ch1_transparent).publish_state(false); }
+          if( x[4] == 0x02 ) { id(npw2500_input_ch1_active).publish_state(true);  id(npw2500_input_ch1_transparent).publish_state(true); }
+                
+          if( x[5] == 0x00 ) { id(npw2500_input_ch2_active).publish_state(false); id(npw2500_input_ch2_transparent).publish_state(false); }
+          if( x[5] == 0x01 ) { id(npw2500_input_ch2_active).publish_state(true);  id(npw2500_input_ch2_transparent).publish_state(false); }
+          if( x[5] == 0x02 ) { id(npw2500_input_ch2_active).publish_state(true);  id(npw2500_input_ch2_transparent).publish_state(true); }  
+
+          float dev_version = x[12];
+          id(npw2500_device_version).publish_state(dev_version / 100);
+          
+          if(id(npw2500_boot_state) == 0)
+          {
+            if( x[13] == 0x00 ) { id(npw2500_powerout_pv2_switch).turn_on();  }
+            if( x[13] == 0x01 ) { id(npw2500_powerout_pv2_switch).turn_off(); }
+          }
+          
+          id(npw2500_passthrough_active).publish_state(x[13] == 0);
+
+              
+          // update powerout switches state
+          if(id(npw2500_boot_state) == 0)
+          {
+            if( x[14] == 0x00 ) { id(npw2500_powerout_switch_ch1).turn_off(); id(npw2500_powerout_switch_ch2).turn_off();}
+            if( x[14] == 0x01 ) { id(npw2500_powerout_switch_ch1).turn_on();  id(npw2500_powerout_switch_ch2).turn_off();}
+            if( x[14] == 0x02 ) { id(npw2500_powerout_switch_ch1).turn_off(); id(npw2500_powerout_switch_ch2).turn_on(); }
+            if( x[14] == 0x03 ) { id(npw2500_powerout_switch_ch1).turn_on();  id(npw2500_powerout_switch_ch2).turn_on(); }
+          }
+          if( x[15] == 0x00 ) { id(npw2500_battery_wifi).publish_state(false); id(npw2500_battery_mqtt).publish_state(false); }
+          if( x[15] == 0x01 ) { id(npw2500_battery_wifi).publish_state(true);  id(npw2500_battery_mqtt).publish_state(false); }
+          if( x[15] == 0x02 ) { id(npw2500_battery_wifi).publish_state(true);  id(npw2500_battery_mqtt).publish_state(true);  }
+       
+          if( x[16] == 0x00 ) { id(npw2500_power_ch1_active).publish_state(false);}
+          if( x[16] == 0x01 ) { id(npw2500_power_ch1_active).publish_state(true); }
+          if( x[17] == 0x00 ) { id(npw2500_power_ch2_active).publish_state(false);}
+          if( x[17] == 0x01 ) { id(npw2500_power_ch2_active).publish_state(true); }  
+
+          id(npw2500_boot_state) = 1;         
+        }
+
+  - id: ble_switch_powerout
+    then:
+    - lambda: |-
+        int ble_cmd_t = 0x00;
+        if ( ! id(npw2500_powerout_switch_ch1).state  && ! id(npw2500_powerout_switch_ch2).state ) { ble_cmd_t = 0x00; }
+        if (   id(npw2500_powerout_switch_ch1).state  && ! id(npw2500_powerout_switch_ch2).state ) { ble_cmd_t = 0x01; }
+        if ( ! id(npw2500_powerout_switch_ch1).state  &&   id(npw2500_powerout_switch_ch2).state ) { ble_cmd_t = 0x02; }
+        if (   id(npw2500_powerout_switch_ch1).state  &&   id(npw2500_powerout_switch_ch2).state ) { ble_cmd_t = 0x03; }        
+        id(ble_command).execute(0x0E, ble_cmd_t);  
+  - id: ble_command
+    parameters:
+      ble_cmd: int
+      ble_cmd_parm: int
+    then: 
+      - lambda: 'ESP_LOGD("NPW2500","ble_command   cmd = %d  parm = %d" ,ble_cmd, ble_cmd_parm); '      
+      - ble_client.ble_write:
+          id: npw2500_ble
+          service_uuid: 'ff00'
+          characteristic_uuid: 'ff01'
+          value: !lambda |-           
+                  int rlen = 0;
+                  int rxor = 0;
+                  std::vector<unsigned char> rdat1{ 0x73,0x06,0x23,(unsigned char)ble_cmd};                    
+                  if (ble_cmd == 0x0C) {
+                    rdat1.push_back((uint8_t)((ble_cmd_parm >> 0) & 0xFF));
+                    rdat1.push_back((uint8_t)((ble_cmd_parm >> 8) & 0xFF));
+                  } else {
+                    rdat1.push_back((unsigned char)ble_cmd_parm);
+                  }          
+                  rlen = rdat1.size();
+                  rdat1.at(1) = rlen+1;
+                        
+                  for (int i=0;i<rlen;i++) {
+                    rxor = rxor ^ rdat1[i];
+                  }
+                  rdat1.push_back(rxor);
+                  return rdat1;      
+  
+  - id: npw2500_mqtt_synchronize
+    then:
+    - logger.log: "MQTT Synchronisierung"
+  
+  - id: power_zero
+    then:
+    ###   Nulleinspeisung - Powerzero by neromatrix
+    ###   first attempt, use at your own risk !
+    ###   Ver. 0.01
+    - lambda: |- 
+          if(id(npw2500_zeropower_enabled).state) 
+          {
+            int ptu_min_value =     5;
+            int ptu_max_value =     id(npw2500_zeropower_max_powerlimit_rel).state;
+            int ptu_limit =         0;
+            int ptu_max_power =     800;
+            int grid_to_ptu_ratio = ptu_max_power/100;           
+            int grid_value  =       int(id(npw2500_grid_power).state);
+            static int ptu_old_limit = 0;  
+            if (id(homeassistant_time).now().is_valid())
+            {
+              char str[30];
+              time_t currTime = id(homeassistant_time).now().timestamp;
+              strftime(str, sizeof(str), "%Y-%m-%d %H:%M", localtime(&currTime));
+              ESP_LOGD("npw2500", "Time: %s", str);
+            }
+ 
+            ptu_limit = grid_value /grid_to_ptu_ratio + ptu_old_limit;
+            
+            if(ptu_limit > ptu_max_value) ptu_limit = ptu_max_value;
+            if(ptu_limit < ptu_min_value) ptu_limit = ptu_min_value;
+
+            ESP_LOGD("npw2500","PowerZero PTU old limit  %d, PTU new limit %d, Grid value %d " ,ptu_old_limit, ptu_limit, grid_value);
+            
+            ptu_old_limit = ptu_limit;  
+            //id(npw2500_gridstored).publish_state(ptu_limit);            
+            id(npw2500_hm_800_limit_nonpersistent_relative).publish_state(ptu_limit);         // push ptu_value to HA
+          }
