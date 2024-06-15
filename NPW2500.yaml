@@ -1,3 +1,42 @@
+esphome:
+  name: npw2500
+  friendly_name: NPW2500
+
+esp32:
+  board: wemos_d1_mini32   #esp32dev
+  framework:
+    type: esp-idf
+    version: recommended
+
+# Enable logging
+logger:
+#  level: INFO
+  level: DEBUG
+#  baud_rate: 0
+
+# Enable Home Assistant API
+api:
+  encryption:
+    key: "lnFuXD00FgKbhrbdxUCuNI+SUZwpyQEU5PVZpbWKyII="
+
+ota:
+  password: "8b7147a88555503647b962c2b551f8b8"
+
+wifi:
+  id: npw2500_wifi
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  reboot_timeout: 0s
+  fast_connect: True
+
+  # Enable fallback hotspot (captive portal) in case wifi connection fails
+  ap:
+    ssid: "Npw2500 Fallback Hotspot"
+    password: "0G8EDTa43a69"
+
+captive_portal:
+    
+
 # No Power Wasted 2500 
 # ESPHome Software für alle gängigen Versionen des Balkonspeichers xy2500.
 # Diese Version ist speziell für Verwendung mit dem Home Assistant ausgelegt und 
@@ -9,54 +48,15 @@
 #
 #   Mögen euch die Bits gnädig sein, 
 #   neromatrix
-
-esphome:
-  name: npw2500
-  friendly_name: No Power Wasted 2500
-
-esp32:
-  board: wemos_d1_mini32   #esp32dev
-  framework:
-    type: esp-idf
-    version: recommended
-#    type: arduino
-
-# Enable logging
-logger:
-  level: INFO
-#  level: DEBUG
-#  baud_rate: 0
-
-# Enable Home Assistant API
-api:
-  encryption:
-    key: "nZnNzvZXYurNIShgY/GSIgZQsnGEeZqSTcOpjowA0TM="
-
-ota:
-  password: "5de5c53a13568a65c99c37cd946dcef8"
-
-wifi:
-  id: npw2500_wifi
-  ssid: !secret wifi_ssid
-  password: !secret wifi_password
-  reboot_timeout: 0s
-  fast_connect: True
-
-  # Enable fallback hotspot (captive portal) in case wifi connection fails
-#  ap:
-#    ssid: "B2500 Fallback Hotspot"
-#    password: "pNLbPnPs0ldL"
-
-#captive_portal:
     
 esp32_ble_tracker:
 
-#web_server:                                      #remove '#' to use web_server
-#  port: 80
-#  local: true
-#  js_include: "./v2/www.js"
-#  js_url: "/0.js"
-#  version: 2
+web_server:                                      #remove '#' to use web_server
+  port: 80
+  local: true
+  js_include: "./v2/www.js"
+  js_url: "/0.js"
+  version: 2
 
 #mqtt:                                            #remove '#' to use mqtt
 #  id: npw2500_mqtt_client
@@ -71,7 +71,6 @@ esp32_ble_tracker:
 ble_client:
   - mac_address: !secret hm2500_1_mac             # mac address of the batterie, you find it in in the App
     id: npw2500_ble
-
                       
 globals:
 
@@ -245,7 +244,7 @@ sensor:
     name: Battery remaining capacity
     id: npw2500_brc
     unit_of_measurement: 'Wh'
-    device_class: 'battery'
+    device_class: 'ENERGY_STORAGE'
     accuracy_decimals: 0
 #    state_topic:  npw2500/battery/brc
 
@@ -254,7 +253,7 @@ sensor:
   - platform:   homeassistant
     name:       Grid Power 
     id:         npw2500_grid_power
-    entity_id:  sensor.grid_power
+    entity_id:  !secret npw2500_grid_power
     unit_of_measurement: 'W'
     device_class: 'power'
     accuracy_decimals: 0
@@ -337,14 +336,14 @@ sensor:
   
   - platform: template
     name: Discharge threshold
-    id:   npw2500_discharge_treshold_value
+    id:   npw2500_discharge_threshold_value
     unit_of_measurement: '%'
-    device_class: 'power'
+    device_class: 'power_factor'
     accuracy_decimals: 0
 
   - platform: template
     name: Solar Charge threshold
-    id:   npw2500_solar_charge_treshold_value
+    id:   npw2500_solar_charge_threshold
     unit_of_measurement: 'W'
     device_class: 'power'
     accuracy_decimals: 0
@@ -372,35 +371,35 @@ sensor:
           return (float)x[0];
 
     #### Battery Charge
-  - platform: template
-    name:     Battery Charge
-    id:       npw2500_battery_charge
-    unit_of_measurement: 'W'
-    device_class: 'power'
-    accuracy_decimals: 0
-    update_interval: 10s
-    lambda: |-
-      if( id(npw2500_input_power).state > id(npw2500_output_power).state ) {
-        return ( id(npw2500_input_power).state - id(npw2500_output_power).state );
-      } else {
-        return (0);
-      }
+#  - platform: template
+#    name:     Battery Charge
+#    id:       npw2500_battery_charge
+#    unit_of_measurement: 'W'
+#    device_class: 'power'
+#    accuracy_decimals: 0
+#    update_interval: 10s
+#    lambda: |-
+#      if( id(npw2500_input_power).state > id(npw2500_output_power).state ) {
+#        return ( id(npw2500_input_power).state - id(npw2500_output_power).state );
+#      } else {
+#        return (0);
+#      }
 #    state_topic:  npw2500/battery/charge
 
     #### Battery Discharge
-  - platform: template
-    name:     Battery Discharge
-    id:       npw2500_battery_Discharge
-    unit_of_measurement: 'W'
-    device_class: 'power'
-    accuracy_decimals: 0
-    update_interval: 10s
-    lambda: |-
-      if( id(npw2500_output_power).state > id(npw2500_input_power).state ) {
-        return ( id(npw2500_output_power).state - id(npw2500_input_power).state );
-      } else {
-        return (0);
-      }
+#  - platform: template
+#    name:     Battery Discharge
+#    id:       npw2500_battery_Discharge
+#    unit_of_measurement: 'W'
+#    device_class: 'power'
+#    accuracy_decimals: 0
+#    update_interval: 10s
+#    lambda: |-
+#      if( id(npw2500_output_power).state > id(npw2500_input_power).state ) {
+#        return ( id(npw2500_output_power).state - id(npw2500_input_power).state );
+#      } else {
+#        return (0);
+#      }
 #    state_topic:  npw2500/battery/discharge
 
      
@@ -469,13 +468,13 @@ switch:
 number:
   - platform:     template
     name:         Discharge threshold
-    id:           npw2500_discharge_treshold
-#   state_topic:  npw2500/treshold/discharge_treshold
-    min_value: 10
-    max_value: 90
+    id:           npw2500_discharge_threshold
+#   state_topic:  npw2500/threshold/discharge_threshold
+    min_value: 0
+    max_value: 100
     step: 1
     optimistic: true
-    initial_value : 90
+    initial_value : 95
     unit_of_measurement: '%'
     device_class: 'battery'
     icon: 'mdi:speedometer'
@@ -485,12 +484,12 @@ number:
             id: ble_command
             ble_cmd: 0x0B
             ble_cmd_parm: !lambda 'return x;'
-        - script.wait: ble_command    
+        - script.wait: ble_command
                           
   - platform:     template
     name:         Solar Charge threshold
-    id:           npw2500_solar_charge_threshold
-#   state_topic:  npw2500/treshold/solar_power_threshold
+    id:           npw2500_solar_charge_slider
+#   state_topic:  npw2500/threshold/solar_power_threshold
     min_value: 0
     max_value: 500
     step: 10
@@ -504,8 +503,8 @@ number:
         - script.execute: 
             id: ble_command
             ble_cmd: 0x0C
-            ble_cmd_parm: !lambda 'return int(x);' 
-        - script.wait: ble_command  
+            ble_cmd_parm: !lambda 'return int(x);'
+        - script.wait: ble_command
 
   ############## HA Integration ##############################
   - platform:     template
@@ -532,7 +531,7 @@ number:
   - platform:     template
     name:         Set max. Power Limit rel.
     id:           npw2500_zeropower_max_powerlimit_rel
-    #state_topic:  npw2500/treshold/solar_power_threshold
+    #state_topic:  npw2500/threshold/solar_power_threshold
     min_value: 10
     max_value: 100
     step: 1
@@ -682,12 +681,12 @@ script:
           //id(ipoi).publish_state(inputpower1 + inputpower2 - outputpower1 - outputpower2);
         
           //int dod_level = x[18];
-          id(npw2500_discharge_treshold_value).publish_state(x[18]);
-          if(id(npw2500_boot_state) == 0) id(npw2500_discharge_treshold).publish_state(x[18]);
+          id(npw2500_discharge_threshold_value).publish_state(x[18]);
+          if(id(npw2500_boot_state) == 0) id(npw2500_discharge_threshold).publish_state(x[18]);
 
-          //Solar Treshold
-          id(npw2500_solar_charge_treshold_value).publish_state(x[19] | x[20] << 8);
-          if(id(npw2500_boot_state) == 0) id(npw2500_solar_charge_threshold).publish_state(x[19] | x[20] << 8);
+          //Solar Threshold
+          id(npw2500_solar_charge_threshold).publish_state(x[19] | x[20] << 8);
+          //if(id(npw2500_boot_state) == 0) id(npw2500_solar_charge_threshold).publish_state(x[19] | x[20] << 8);
 
 
           // Battery state of charge %
